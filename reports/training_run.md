@@ -4,6 +4,8 @@
 
 当前配置：SegFormer-B0 / CamVid 11 类，输入 384×384，batch=4，CE，AdamW，学习率 6e-5，weight decay=0.01，50 epoch，seed=42，CUDA AMP。正式模型独立从固定 MiT-B0 编码器初始化，按 val mIoU 保存最佳模型。
 
+已于北京时间 2026-10-14 19:03 在后台启动，进程 PID=40612，源码提交为 `acf99ee136416497c59c390f74342b3624fd7b12`，已上传 GitHub main。首轮启动检查通过：train loss=1.196523，val loss=0.788057，val mIoU=0.344552，epoch 耗时约 96.36 秒，峰值 allocated VRAM 820.70 MiB；best 与 last checkpoint 已保存。这是第 1/50 轮的验证记录，尚非最终成绩；后续进度以实时状态和 CSV 为准。
+
 ```powershell
 python scripts/train.py --config configs/baseline.yaml --offline
 ```
