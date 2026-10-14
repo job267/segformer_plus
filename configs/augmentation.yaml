@@ -1,0 +1,5 @@
+extends: baseline.yaml
+experiment_id: E1_augmentation
+output_dir: results/E1_augmentation
+augmentation:
+  enabled: true

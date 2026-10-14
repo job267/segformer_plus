@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "timestamp_utc": "2026-10-13T06:17:28.176455+00:00",
+  "command_scope": "one_optimizer_step",
+  "validation_scope": "synthetic_logic_only",
+  "random_init": false,
+  "device": "cuda",
+  "amp": true,
+  "seed": 42,
+  "loss": 2.872112512588501,
+  "gradient_norm": 0.5632876753807068,
+  "optimizer_updated": true,
+  "logits_shape": [
+    4,
+    11,
+    96,
+    96
+  ],
+  "resized_logits_shape": [
+    4,
+    11,
+    384,
+    384
+  ],
+  "labels_shape": [
+    4,
+    384,
+    384
+  ],
+  "sample_ids": [
+    "synthetic_0",
+    "synthetic_1",
+    "synthetic_2",
+    "synthetic_3"
+  ],
+  "initialization": "ImageNet_MiT_B0",
+  "peak_vram_mb": 759.4501953125,
+  "elapsed_seconds": 21.114316899969708
+}

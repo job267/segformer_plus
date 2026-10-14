@@ -1,0 +1,5 @@
+extends: baseline.yaml
+experiment_id: E2_dice
+output_dir: results/E2_dice
+training:
+  loss: ce_dice

@@ -1,0 +1,26 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Keep source instructions, exclude public datasets and downloaded weights.
+data/*
+!data/README.md
+!data/.gitkeep
+weights/
+*.pt
+*.pth
+*.bin
+*.safetensors
+results/**/best_model/
+results/**/last_checkpoint/
+results/**/checkpoints/
+results/**/previews/
+results/**/training.lock
+results/**/stdout.log
+results/**/stderr.log
+*.tmp

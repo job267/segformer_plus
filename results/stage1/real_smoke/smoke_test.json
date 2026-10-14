@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "timestamp_utc": "2026-10-13T06:24:35.582247+00:00",
+  "command_scope": "one_optimizer_step",
+  "validation_scope": "CamVid_train_batch",
+  "random_init": false,
+  "device": "cuda",
+  "amp": true,
+  "seed": 42,
+  "loss": 2.4032318592071533,
+  "gradient_norm": 4.958008289337158,
+  "optimizer_updated": true,
+  "logits_shape": [
+    4,
+    11,
+    96,
+    96
+  ],
+  "resized_logits_shape": [
+    4,
+    11,
+    384,
+    384
+  ],
+  "labels_shape": [
+    4,
+    384,
+    384
+  ],
+  "sample_ids": [
+    "0001TP_006690",
+    "0001TP_006720",
+    "0001TP_006750",
+    "0001TP_006780"
+  ],
+  "initialization": "ImageNet_MiT_B0",
+  "peak_vram_mb": 759.4501953125,
+  "elapsed_seconds": 26.039905700017698
+}

@@ -1,0 +1,7 @@
+extends: baseline.yaml
+experiment_id: E3_combined
+output_dir: results/E3_combined
+augmentation:
+  enabled: true
+training:
+  loss: ce_dice
