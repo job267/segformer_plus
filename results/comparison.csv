@@ -1,5 +1,5 @@
 experiment_id,status,best_val_epoch,best_val_miou,test_miou,pixel_accuracy,delta_test_miou_pp,train_val_minutes,peak_vram_mb
 E0_baseline,completed,34,0.677649976788828,0.5924897112097337,0.8976505424329727,0.0,46.079787269999116,820.70068359375
-E1_augmentation,pending,,,,,,,
+E1_augmentation,training,,,,,,,
 E2_dice,pending,,,,,,,
 E3_combined,pending,,,,,,,

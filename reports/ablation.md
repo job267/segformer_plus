@@ -6,7 +6,7 @@
 | 实验 | 状态 | 最佳 Val mIoU | Test mIoU | 相对 E0 的 Test 变化 |
 |---|---|---:|---:|---:|
 | E0_baseline | completed | 67.76% | 59.25% | +0.00 个百分点 |
-| E1_augmentation | pending |  |  |  |
+| E1_augmentation | training |  |  |  |
 | E2_dice | pending |  |  |  |
 | E3_combined | pending |  |  |  |
 

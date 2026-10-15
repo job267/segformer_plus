@@ -17,3 +17,9 @@ E0 已完成 50 轮，最佳验证轮次 34，Val mIoU=67.76%，对应 Test mIoU
 scripts/run_experiments.py 持有系统文件锁，依次运行 E1→E2→E3；单组失败就停止队列。每次启动前核验源文件、配置和依赖哈希，逐组归档后重新核验数据来源、原训练代码、权重与指标，再更新 comparison.csv 和 reports/ablation.md。运行中不修改 src/、scripts/、configs/ 或 requirements.txt。中断后使用同一代码执行 `python scripts/run_experiments.py --offline --resume`。
 
 实时状态以 results/ablation_queue/status.json 和各组 status.json 为准。三组结束后才判断收益，按最高 Val mIoU 选择后续演示方案；当前没有新增实验成绩。
+
+## 已验证的正式启动
+
+北京时间 2026-10-15 09:40 启动后台顺序队列，PID=24284；E1 子进程 PID=50488。训练源码提交 `9bbabf5511cdb31487c559206db3d741c0c3ed33` 已推送至 GitHub main。E1 的来源与初始化日志确认使用固定 ImageNet MiT-B0 编码器及新建 11 类分割头，未启用续训。
+
+E1 首轮训练与验证于 09:41:30 完成：train CE=1.199229，val CE=0.806523，val mIoU=34.35%，耗时 47.29 秒，峰值 allocated VRAM=820.70 MiB。best_model 与 last_checkpoint 已保存，stderr 为空。这是第 1/50 轮的启动检查，不代表最终成绩。队列将在 E1 完整训练、测试和归档后自动启动 E2，再启动 E3；本记录不会随每轮变化，实时轮数以状态文件为准。
