@@ -15,3 +15,7 @@ python scripts/train.py --config configs/baseline.yaml --offline
 实时状态以 `results/E0_baseline/status.json` 为准，逐轮日志为 `train_log.csv`。启动信息、源码哈希、环境与实际初始化记录分别位于同目录的 `run_info.json`、`environment.json`、`model_loading.json`；checkpoint 保存在 `last_checkpoint/` 与 `best_model/`。
 
 只有 50 轮训练和验证选模结束后才进行 test 评价；随后自动输出真实指标、曲线、混淆矩阵和固定样本预测。未完成阶段不填写成绩，也不自动启动 E1–E3。
+
+## 完成记录
+
+2026-10-14 北京时间约 19:50 完成 50/50 轮训练与自动归档，运行状态 completed，stderr 为空。最佳验证轮次为 34，val mIoU=67.76%；该模型一次完整 test 评价的 mIoU=59.25%，pixel accuracy=89.77%。各轮训练与验证累计约 46.08 分钟。完整指标、权重一致性和类别错误分析见 reports/baseline_analysis.md；E1–E3 尚未启动。

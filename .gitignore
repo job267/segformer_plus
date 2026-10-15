@@ -20,6 +20,7 @@ results/**/best_model/
 results/**/last_checkpoint/
 results/**/checkpoints/
 results/**/previews/
+results/**/predictions/
 results/**/training.lock
 results/**/stdout.log
 results/**/stderr.log

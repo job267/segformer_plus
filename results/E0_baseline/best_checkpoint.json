@@ -1,0 +1,5 @@
+{
+  "selected_by": "val_miou",
+  "best_val_epoch": 34,
+  "best_val_miou": 0.677649976788828
+}

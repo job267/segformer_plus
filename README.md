@@ -1,8 +1,8 @@
 # SegFormer-B0 / CamVid 课程设计
 
-依据根目录的项目方案，Stage 0–1 基础构建和验收已完成，当前进入 **Stage 2：E0 正式基线训练**。E1–E3 消融、演示和课程报告按后续阶段开展。基础检查记录见 `reports/stage0_stage1_status.md`；所有数值必须来自实际生成的文件。
+依据根目录的项目方案，E0 已完成 50 轮训练及错误分析，当前进入 **Stage 4：E1–E3 消融实验**。E0 最佳 Val mIoU=67.76%，对应 Test mIoU=59.25%，详见 [基线分析](reports/baseline_analysis.md)。基础检查记录见 `reports/stage0_stage1_status.md`；所有数值必须来自实际生成的文件。
 
-**当前验证：25 项测试通过，包含基础验收、断点续训一致性、最佳验证模型选择与指标导出检查。CamVid 完整数据与预训练编码器已就绪。**
+**当前验证：31 项测试通过，包含基础验收、断点续训一致性、验证选模、顺序队列、失败停止和指标核验。增强、增强加 Dice 的真实 CUDA 批次检查通过。**
 
 ## 1. 环境与安装
 
@@ -107,4 +107,19 @@ python scripts/train.py --config configs/baseline.yaml --offline --resume
 
 50 轮结束后，自动用最佳验证权重进行一次完整 test 评价，保存 `metrics.json`、每类 IoU、混淆矩阵 CSV/PNG、训练曲线，以及六个预先确定位置的测试样本可视化。测试只用于最终评价。若归档中断，已完成的同一权重测试结果会复用，不重新选择模型。
 
-实际启动与进度记录见 `reports/training_run.md`。E1–E3 不会自动启动；FP32/FP16 效率测试仍在后续阶段。
+实际启动与进度记录见 `reports/training_run.md`。单组入口不会自动启动其他实验；FP32/FP16 效率测试仍在后续阶段。
+
+## 7. E1–E3 顺序训练与比较
+
+```powershell
+# 验证 E0 归档和冻结配置，依次训练 E1、E2、E3
+python scripts/run_experiments.py --offline
+# 中断后跳过已完整归档的组，恢复未完成的组
+python scripts/run_experiments.py --offline --resume
+# 四组全部完成后重新核验并生成比较；查看中途记录加 --allow-incomplete
+python scripts/compare_experiments.py
+```
+
+E1 仅加水平翻转和轻量颜色增强；E2 仅改为 CE+0.5 Dice；E3 同时启用两项。各组独立从固定预训练编码器、相同 seed=42 和新建分割头开始，均为 50 轮，其余预算、数据、预处理和优化器与 E0 相同。运行前校验 E0 原有训练源码哈希；队列运行期间冻结源码、配置和依赖文件。出现失败时停止后续实验，保留诊断与恢复入口。
+
+队列进度位于 `results/ablation_queue/status.json`；各组 `status.json` 与 `train_log.csv` 保存实际轮数。每完成一组便更新 `results/comparison.csv`、`results/comparison_per_class.csv` 和 [消融记录](reports/ablation.md)，未完成组留空。最终依据最高 Val mIoU 选择方案并保存 `results/validation_selected_experiment.json`，Test 仅用于最终评价。增强或 Dice 的收益以实际结果为准。权重、原图预测和运行日志保留在本地，不纳入 Git。

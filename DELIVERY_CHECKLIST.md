@@ -1,6 +1,6 @@
 # 基础构建验收清单
 
-Stage 0–1 已完成；当前进入 E0 正式训练。基础验收见 `reports/stage0_stage1_status.md`，正式运行记录见 `reports/training_run.md`。
+E0 及基线分析已完成；当前进入 E1–E3 消融。基础验收见 `reports/stage0_stage1_status.md`，运行记录见 `reports/training_run.md` 和 `reports/optimization_run.md`。
 
 - [x] 已阅读原方案并冻结基本实现范围。
 - [x] README、固定依赖、Git ignore、E0–E3 YAML 与配置加载器。
@@ -14,7 +14,9 @@ Stage 0–1 已完成；当前进入 E0 正式训练。基础验收见 `reports/
 - [x] 完整真实数据审计通过：367 / 101 / 233，错误数为 0。
 - [x] CUDA 真实批次冒烟、20 张训练样本的学习能力验收通过。
 - [x] 正式训练入口、断点恢复一致性、验证选模、自动最终评价及归档代码；25 项测试通过。
-- [ ] E0 正式训练、best/last、验证／测试归档。
+- [x] E0 完成 50 轮；第 34 轮验证选模；test mIoU=59.25%，best/last、曲线与指标已归档。
+- [x] 基线类别与混淆分析，见 reports/baseline_analysis.md。
+- [x] E1–E3 顺序执行、失败停止、恢复和实测比较入口；31 项测试与增强/Dice 真实批次检查通过。
 - [ ] E1–E3 正式消融、每类分析、曲线和真实比较表。
 - [ ] 本地图片演示和 FP32／FP16 基准。
 - [ ] 课程报告与最终复现归档。
