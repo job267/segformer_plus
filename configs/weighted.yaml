@@ -1,0 +1,8 @@
+extends: resolution.yaml
+experiment_id: E5_weighted
+output_dir: results/E5_weighted
+training:
+  class_weighting:
+    method: inverse_sqrt_mean_clipped
+    minimum: 0.5
+    maximum: 3.0

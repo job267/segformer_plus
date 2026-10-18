@@ -18,3 +18,9 @@ E0–E3 已全部完成；E3 为当前验证集选择方案：Val mIoU=71.00%，
 北京时间 2026-10-18 19:25:50 后台启动，PID=34188。训练源码提交为 `c124479a20089f17a4193bdc6e75d97c8302db22`，已推送 GitHub main。数据文件审计、原 E3 源码/权重一致性和环境复核通过，resuming=false，使用固定预训练编码器和新建分割头。
 
 第 1/50 轮于 19:27:23 完成：train CE+Dice=1.559475，val CE+Dice=1.104852，共同 384×384 标签网格的 val mIoU=35.40%，耗时 70.31 秒，峰值 allocated VRAM=1460.80 MiB。best_model/model.safetensors 与 last_checkpoint/state.pt 已保存，stderr 为空。这只是首轮启动检查；后续轮数以 status.json 和 train_log.csv 为准，最终测试与 E3 比较会在 50 轮结束后自动执行。
+
+## 完成记录
+
+2026-10-18 北京时间 20:23:28 完成 50 轮、一次最终测试与归档。最佳轮次为 50，Val mIoU=72.877041%，Test mIoU=64.287681%，测试像素准确率=90.941479%；相较 E3 的 Test mIoU 提升 2.866094 个百分点。训练/验证累计 56.73 分钟，峰值 allocated VRAM=1460.80 MiB；stderr 为空。完整历史、最佳权重 SHA256、共同标签网格与测试记录已核验，详细表见 resolution_ablation.md。
+
+2026-10-18 用户授权继续，以 E4 为对照开展 E5 类别加权；E4 原始结果和源码保持不变。已完成基于 E4 最佳权重的图片推理演示和验证集 FP32/FP16 基准，见 inference_benchmark.md。

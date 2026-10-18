@@ -1,8 +1,8 @@
 # SegFormer-B0 / CamVid 课程设计
 
-依据根目录的项目方案，E0–E3 已完成训练与消融；E3 最佳 Val mIoU=71.00%，对应 Test mIoU=61.42%，较 E0 提升 2.17 个百分点，详见 [消融结果](reports/ablation.md)。当前推进 **E4：512×512 分辨率扩展实验**。基础检查记录见 `reports/stage0_stage1_status.md`；所有数值必须来自实际生成的文件。
+依据根目录的项目方案，E0–E4 已完成训练与消融；当前验证选择 E4，最佳 Val mIoU=72.88%，对应 Test mIoU=64.29%，详见 [分辨率结果](reports/resolution_ablation.md)。当前推进 **E5：训练频率类别加权实验**。图片推理和 FP32/FP16 评测已完成。所有数值来自实际文件。
 
-**当前验证：40 项测试通过。E4 的真实 CUDA 训练批次检查通过，全部 101/233 张验证/测试标签与 E3 的评价网格逐像素一致。**
+**当前验证：54 项测试通过。E5 的真实 CUDA 加权更新检查通过；训练适配器在全 1 权重测试中与原引擎完全一致，加权断点恢复一致性通过。E4 FP32 推理的全部验证混淆矩阵与原归档一致。**
 
 ## 1. 环境与安装
 
@@ -140,3 +140,35 @@ python scripts/compare_resolution.py
 E4 沿用 E3 的数据、增强、CE+0.5 Dice、seed=42、batch=4、50 轮和 AdamW 设置；输入及训练标签为 512×512。验证、测试标签直接从原始标注最近邻缩放至 384×384，模型 logits 双线性插值到这一共同网格后计算 loss 与指标。以相同网格的最高验证 mIoU 选模，最终测试一次，不从 E3 微调权重接续。训练引擎与 E0–E3 原有源文件保持一致，仅增加独立数据适配器和执行入口。
 
 进度位于 `results/E4_resolution/status.json`；完成后自动生成 `results/resolution_comparison.csv`、`results/resolution_per_class.csv`、`results/resolution_validation_selected_experiment.json` 和 [分辨率比较](reports/resolution_ablation.md)。原 E0–E3 比较表与选模记录保留。该实验固定训练轮数和 batch，增加了每步像素计算量，不能称为等算力实验；当前测试集已查看过，不将新增结果视为未见盲测。执行记录见 [E4 运行说明](reports/resolution_run.md)。
+
+## 9. E5 类别加权实验
+
+```powershell
+# 训练 mask 统计、权重归档、真实 512×512 参数更新和验证批次检查
+python scripts/check_weighted.py --offline
+# 正式独立训练 50 轮；中断后加 --resume
+python scripts/train_weighted.py --offline
+# 完成后重建 E4/E5 比较；中途查看加 --allow-incomplete
+python scripts/compare_weighted.py
+```
+
+E5 继承 E4，仅给 CE 增加类别权重，Dice 系数仍为 0.5。权重仅用 367 张未增强训练 mask 在 512×512 网格上的有效像素计算：`raw_c = 1/sqrt(frequency_c)`，再除以 raw 的类别均值，截断至 `[0.5,3.0]`；不使用 val/test 频率。权重、样本 ID、计数和哈希位于 `results/stage6/class_weights.json`。加权 CE 以有效像素权重之和归一化；逐轮 loss 沿用原批次有效像素加权记录方式，不直接与 E4 loss 比较。
+
+输入/训练标签 512×512，验证/测试标签 384×384，独立预训练初始化、增强、seed=42、batch=4、50 轮及优化器不变。原 E0–E4 源码保持冻结；E5 使用单独的训练适配器，复用原 epoch、评价与 checkpoint 工具，不修改原训练全局函数。除完整训练状态外，checkpoint 同时保存类别权重，恢复时核对配置、代码、数据、权重与 E4 对照身份。
+
+进度为 `results/E5_weighted/status.json`。完成后自动生成 `results/weighted_comparison.csv`、`weighted_per_class.csv`、`weighted_validation_per_class.csv`、`weighted_validation_selected_experiment.json` 和 [类别加权报告](reports/weighted_ablation.md)。按最高验证 mIoU 选择 E4/E5，同分保留 E4；不预设加权有效。完整协议见 [E5 协议](docs/weighted_protocol.md)。
+
+## 10. 图片推理与效率评测
+
+```powershell
+# --input 支持单张图片或图片目录；使用空输出目录保留历史结果
+python scripts/predict.py --input data/CamVid/CamVid_RGB/0016E5_07959.png --output-dir results/inference_demo_new
+# 在 CUDA 上使用 FP16 autocast；模型权重仍为 FP32
+python scripts/predict.py --input path/to/image.jpg --precision fp16 --output-dir results/inference_fp16
+# 默认已验证的 E4；可用 --run-dir 指定其他已完成且归档一致的实验
+python scripts/benchmark_inference.py --output-dir results/benchmark_E4_new
+```
+
+推理输出原图分辨率的 `index.png`（0–10 类 ID）、`segmentation.png`、`overlay.png`、原图及可本地打开的 HTML 图例预览。只加载本地完整归档且权重哈希相符的最佳模型，无额外下载；FP16 需要 CUDA。样例见本地 `results/inference_demo/index.html`，由验证图像生成，不代表整套数据的精度。
+
+完整 101 张验证样本的 FP32/FP16 评价及 batch=1 性能见 [推理评测](reports/inference_benchmark.md)。本机此次模型均时 FP32=21.14 ms、FP16 autocast=25.25 ms；后者 allocated 峰值更低，但未获得加速，默认保留 FP32。模型测速不含读图与传输；另外单独记录含预处理、传输、原尺寸输出及叠加着色的图片流程耗时，二者不能混称端到端 FPS。评测在 E5 启动前完成，未重新评价测试集。

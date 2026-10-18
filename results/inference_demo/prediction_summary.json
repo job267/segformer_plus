@@ -1,0 +1,35 @@
+{
+  "experiment_id": "E4_resolution",
+  "checkpoint_sha256": "405c0259d3542a612ce805fb46081a7f2899c8db16261c0a5ef0983dd6620084",
+  "precision": "fp32",
+  "device": "cuda",
+  "input_size": [
+    512,
+    512
+  ],
+  "output_grid": "original image size; logits resized before argmax; class IDs 0-10",
+  "images": [
+    {
+      "input": "D:\\code\\graph-NEU\\data\\CamVid\\CamVid_RGB\\0016E5_07959.png",
+      "input_sha256": "d263d14b5b20f9bae6d4a0eb3ab68da621de9470430c813a850e632de3d3cce4",
+      "original_size": [
+        720,
+        960
+      ],
+      "directory": "000_0016E5_07959",
+      "present_classes": [
+        "Sky",
+        "Building",
+        "Pole",
+        "Road",
+        "Sidewalk",
+        "Tree",
+        "SignSymbol",
+        "Fence",
+        "Car",
+        "Pedestrian",
+        "Bicyclist"
+      ]
+    }
+  ]
+}
