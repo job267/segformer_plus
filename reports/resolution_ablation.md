@@ -8,6 +8,6 @@ E4 独立从固定预训练编码器开始，不接续 E3 权重。
 | 实验 | 状态 | 最佳 Val mIoU | Test mIoU | Val 变化 | Test 变化 |
 |---|---|---:|---:|---:|---:|
 | E3_combined | completed | 71.00% | 61.42% | +0.00 pp | +0.00 pp |
-| E4_resolution | pending |  |  |  |  |
+| E4_resolution | training |  |  |  |  |
 
 E4 尚未完成，空白不表示零分；完成后自动核验并汇总，不预设分辨率提高必然有收益。
