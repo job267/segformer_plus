@@ -8,6 +8,6 @@ CE 以有效像素权重之和为分母；不使用验证或测试频率生成�
 | 实验 | 状态 | 最佳 Val mIoU | Test mIoU | Val 变化 | Test 变化 |
 |---|---|---:|---:|---:|---:|
 | E4_resolution | completed | 72.88% | 64.29% | +0.00 pp | +0.00 pp |
-| E5_weighted | pending |  |  |  |  |
+| E5_weighted | training |  |  |  |  |
 
 E5 尚未完成，暂不判断加权是否有效，空白不代表零分。

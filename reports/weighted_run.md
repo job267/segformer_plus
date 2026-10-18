@@ -13,3 +13,9 @@ E4 图片推理：scripts/predict.py 支持单图或目录，输出原尺寸索�
 E4 实测效率：FP32/FP16 的完整 101 张验证 mIoU 均约 72.88%，FP32 混淆矩阵逐项等于归档；FP16 变化 +0.0038 个百分点。batch=1 模型均时分别为 21.14/25.25 ms、allocated 峰值 325.09/228.52 MiB；当前实现 FP16 更省显存，但未加速，默认保留 FP32。完整图片流程均时分别为 92.61/94.89 ms，不含模型加载和保存文件。计时范围、预热和样本详见 inference_benchmark.md；这次评测完成后才启动 E5。
 
 正式命令为 `python scripts/train_weighted.py --offline`，恢复时加 `--resume`。进度为 results/E5_weighted/status.json；结束后自动评价和输出 weighted_comparison.csv、验证/测试逐类对照及 weighted_ablation.md。E5 尚无正式结果，不提前判断加权收益。
+
+## 正式启动检查
+
+北京时间 2026-10-18 20:49:19 后台启动 E5，PID=34932。训练源码为已上传 GitHub main 的 `2b008ae`，独立预训练初始化，resuming=false；权重归档、E4 原始源文件和 checkpoint、数据审计与环境复核均通过。
+
+第 1/50 轮于 20:50:51 完成：train 加权 CE+Dice=1.682864，val 加权 CE+Dice=1.280476，val mIoU=46.18%，耗时 75.52 秒，峰值 allocated VRAM=1460.80 MiB。best_model 和 last_checkpoint 已保存，stderr 为空。该记录为启动验收，最终成绩待全部训练及验证选模结束后产生；实际进度以状态和逐轮 CSV 为准。

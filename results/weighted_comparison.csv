@@ -1,3 +1,3 @@
 experiment_id,status,best_val_epoch,best_val_miou,test_miou,pixel_accuracy,delta_val_pp,delta_test_pp,train_val_minutes,peak_vram_mb
 E4_resolution,completed,50,0.7287704074025414,0.6428768104040329,0.9094147889366957,0.0,0.0,56.725841158333,1460.802734375
-E5_weighted,pending,,,,,,,,
+E5_weighted,training,,,,,,,,
