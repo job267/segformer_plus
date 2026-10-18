@@ -1,0 +1,3 @@
+family,paired_n,planned_n,val_miou_mean,val_miou_std,test_miou_mean,test_miou_std,test_pixel_accuracy_mean,test_pixel_accuracy_std
+E4,1,3,0.7287704074025414,,0.6428768104040329,,0.9094147889366957,
+E5,1,3,0.7306127734744442,,0.6491699929901098,,0.9070580469878237,

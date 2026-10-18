@@ -1,0 +1,7 @@
+family,seed,experiment_id,status,best_val_epoch,best_val_miou,test_miou,pixel_accuracy
+E4,42,E4_resolution,completed,50,0.7287704074025414,0.6428768104040329,0.9094147889366957
+E5,42,E5_weighted,completed,50,0.7306127734744442,0.6491699929901098,0.9070580469878237
+E4,2024,E4_seed2024,pending,,,,
+E5,2024,E5_seed2024,pending,,,,
+E4,3407,E4_seed3407,pending,,,,
+E5,3407,E5_seed3407,pending,,,,

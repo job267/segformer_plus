@@ -1,8 +1,8 @@
 # SegFormer-B0 / CamVid 课程设计
 
-依据根目录的项目方案，E0–E4 已完成训练与消融；当前验证选择 E4，最佳 Val mIoU=72.88%，对应 Test mIoU=64.29%，详见 [分辨率结果](reports/resolution_ablation.md)。当前推进 **E5：训练频率类别加权实验**。图片推理和 FP32/FP16 评测已完成。所有数值来自实际文件。
+依据根目录的项目方案，E0–E5 已完成训练与消融；seed=42 下 E5 最佳 Val mIoU=73.06%，对应 Test mIoU=64.92%，相对 E4 分别提升 0.18/0.63 个百分点，详见 [加权结果](reports/weighted_ablation.md)。当前推进 **E4/E5 多随机种子复核**。图片推理和 FP32/FP16 评测已完成。所有数值来自实际文件。
 
-**当前验证：54 项测试通过。E5 的真实 CUDA 加权更新检查通过；训练适配器在全 1 权重测试中与原引擎完全一致，加权断点恢复一致性通过。E4 FP32 推理的全部验证混淆矩阵与原归档一致。**
+**当前验证：64 项测试通过，新增固定种子矩阵、配对统计、样本标准差、无提前选模及初始化哈希检查。E4/E5 原训练实现和已完成结果保持冻结。**
 
 ## 1. 环境与安装
 
@@ -172,3 +172,18 @@ python scripts/benchmark_inference.py --output-dir results/benchmark_E4_new
 推理输出原图分辨率的 `index.png`（0–10 类 ID）、`segmentation.png`、`overlay.png`、原图及可本地打开的 HTML 图例预览。只加载本地完整归档且权重哈希相符的最佳模型，无额外下载；FP16 需要 CUDA。样例见本地 `results/inference_demo/index.html`，由验证图像生成，不代表整套数据的精度。
 
 完整 101 张验证样本的 FP32/FP16 评价及 batch=1 性能见 [推理评测](reports/inference_benchmark.md)。本机此次模型均时 FP32=21.14 ms、FP16 autocast=25.25 ms；后者 allocated 峰值更低，但未获得加速，默认保留 FP32。模型测速不含读图与传输；另外单独记录含预处理、传输、原尺寸输出及叠加着色的图片流程耗时，二者不能混称端到端 FPS。评测在 E5 启动前完成，未重新评价测试集。
+
+## 11. E4/E5 三种子配对复核
+
+```powershell
+# 核验原归档、数据和两组在新种子下完全相同的实际预训练初始化
+python scripts/check_multiseed.py --offline
+# 顺序执行四次新增训练；中断后加 --resume，已完成的归档会核验后跳过
+python scripts/run_multiseed.py --offline
+# 完成后重建均值、样本标准差和配对差值；中途查看加 --allow-incomplete
+python scripts/compare_multiseed.py
+```
+
+固定种子为 `[42,2024,3407]`。seed=42 使用已有 E4/E5 归档，不重复训练或测试。新增顺序为 E4_seed2024 → E5_seed2024 → E4_seed3407 → E5_seed3407，各 50 轮；两组继续复用原训练引擎，除种子、实验 ID 和独立输出目录外不改变配置。E5 使用原训练频率权重，不按种子重新调权重；每次从固定预训练编码器和新建头独立开始。正式训练前、每个新种子下 E4/E5 全部初始参数与 buffers 的 SHA256 必须一致，原数据与所有已有源文件也须一致。
+
+队列状态位于 `results/multiseed/queue/status.json`，各训练位于 `results/multiseed/E4_seed2024/` 等目录。每完成一组便更新 `runs.csv`、`summary.csv`、`paired_differences.csv`、`per_class_summary.csv` 和 [多种子报告](reports/multiseed.md)。汇总仅使用 E4/E5 都完整完成的相同种子，标准差为 ddof=1，只有一对时留空。全部三对结束后，按平均最佳 Val mIoU 选择方案，同分保留 E4；部署代表固定使用胜出方案已有 seed=42 模型，不按 Test 挑种子或集成。最终选择保存 `results/multiseed/selection.json`。三种子为描述性复核，不证明统计显著性或场景泛化。协议见 [多种子协议](docs/multiseed_protocol.md)。
