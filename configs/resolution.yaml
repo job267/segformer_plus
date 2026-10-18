@@ -1,0 +1,6 @@
+extends: combined.yaml
+experiment_id: E4_resolution
+output_dir: results/E4_resolution
+preprocessing:
+  size: [512, 512]
+  evaluation_size: [384, 384]

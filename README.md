@@ -1,8 +1,8 @@
 # SegFormer-B0 / CamVid 课程设计
 
-依据根目录的项目方案，E0 已完成 50 轮训练及错误分析，当前进入 **Stage 4：E1–E3 消融实验**。E0 最佳 Val mIoU=67.76%，对应 Test mIoU=59.25%，详见 [基线分析](reports/baseline_analysis.md)。基础检查记录见 `reports/stage0_stage1_status.md`；所有数值必须来自实际生成的文件。
+依据根目录的项目方案，E0–E3 已完成训练与消融；E3 最佳 Val mIoU=71.00%，对应 Test mIoU=61.42%，较 E0 提升 2.17 个百分点，详见 [消融结果](reports/ablation.md)。当前推进 **E4：512×512 分辨率扩展实验**。基础检查记录见 `reports/stage0_stage1_status.md`；所有数值必须来自实际生成的文件。
 
-**当前验证：31 项测试通过，包含基础验收、断点续训一致性、验证选模、顺序队列、失败停止和指标核验。增强、增强加 Dice 的真实 CUDA 批次检查通过。**
+**当前验证：40 项测试通过。E4 的真实 CUDA 训练批次检查通过，全部 101/233 张验证/测试标签与 E3 的评价网格逐像素一致。**
 
 ## 1. 环境与安装
 
@@ -73,7 +73,7 @@ environment.json  真实环境记录
 
 - 主模型采用 [Transformers 4.44.1 的 SegFormer 实现](https://huggingface.co/docs/transformers/v4.44.1/model_doc/segformer)。载入 [nvidia/mit-b0](https://huggingface.co/nvidia/mit-b0) 的 ImageNet 编码器，然后严格复制编码器权重，并新建 11 类解码头。分类层的两项多余权重可以解释，其他缺失或多余键会直接报错。权重版本固定为 `80983a413c30d36a39c20203974ae7807835e2b4`。
 - 数据来自 [lih627/CamVid](https://github.com/lih627/CamVid)，版本固定为 `79ae0071a75d90331a62b5a2aaf6d53cc69fd9f6`；使用该来源的三个清单及 `CamVidGray` 标签，不混入其他划分。367/101/233 是参考数量，验收以审计后的文件为准。
-- 配置中路径相对于项目根目录解析；YAML 的 `extends` 相对于当前配置文件解析。实际修改训练预算、输入尺寸或 batch 时，修改 `baseline.yaml`，保证四组继承同一设置。
+- 配置中路径相对于项目根目录解析；YAML 的 `extends` 相对于当前配置文件解析。E0–E3 配置和实现已冻结；扩展实验使用独立配置覆盖，不修改 `baseline.yaml`。
 - 标签 0 为 Sky，有效类为 0–10，255 为 ignore。默认显式选择 `index` 编码；RGB 11 类标签可设 `rgb`，未知颜色会报错。不会自动把原始 32 类 RGB 标签当成 11 类数据。
 - 使用自有成对变换实现 384×384 拉伸缩放和 ImageNet Normalize；图像用双线性、标签用最近邻。验证、测试不采用随机增强。标签 ID 从不平移。
 - 模型缓存位于 `.cache/huggingface/`，数据和大型权重不会纳入 Git。Windows 缺少符号链接权限时缓存会使用普通文件，无需管理员权限。
@@ -123,3 +123,20 @@ python scripts/compare_experiments.py
 E1 仅加水平翻转和轻量颜色增强；E2 仅改为 CE+0.5 Dice；E3 同时启用两项。各组独立从固定预训练编码器、相同 seed=42 和新建分割头开始，均为 50 轮，其余预算、数据、预处理和优化器与 E0 相同。运行前校验 E0 原有训练源码哈希；队列运行期间冻结源码、配置和依赖文件。出现失败时停止后续实验，保留诊断与恢复入口。
 
 队列进度位于 `results/ablation_queue/status.json`；各组 `status.json` 与 `train_log.csv` 保存实际轮数。每完成一组便更新 `results/comparison.csv`、`results/comparison_per_class.csv` 和 [消融记录](reports/ablation.md)，未完成组留空。最终依据最高 Val mIoU 选择方案并保存 `results/validation_selected_experiment.json`，Test 仅用于最终评价。增强或 Dice 的收益以实际结果为准。权重、原图预测和运行日志保留在本地，不纳入 Git。
+
+## 8. E4 分辨率扩展实验
+
+```powershell
+# 独立诊断目录：真实 512×512、batch=4 的一次参数更新
+python scripts/smoke_test.py --config configs/resolution.yaml --offline --batch-size 4 --output-dir results/stage5/E4_smoke
+# 核对全部 val/test 标签与 E3 完全一致，并检查真实 FP32 验证批次
+python scripts/check_resolution.py --offline
+# 正式 E4：独立预训练初始化，50 轮；中断后加 --resume
+python scripts/train_resolution.py --offline
+# 全部结束后重建独立比较表；中途查看加 --allow-incomplete
+python scripts/compare_resolution.py
+```
+
+E4 沿用 E3 的数据、增强、CE+0.5 Dice、seed=42、batch=4、50 轮和 AdamW 设置；输入及训练标签为 512×512。验证、测试标签直接从原始标注最近邻缩放至 384×384，模型 logits 双线性插值到这一共同网格后计算 loss 与指标。以相同网格的最高验证 mIoU 选模，最终测试一次，不从 E3 微调权重接续。训练引擎与 E0–E3 原有源文件保持一致，仅增加独立数据适配器和执行入口。
+
+进度位于 `results/E4_resolution/status.json`；完成后自动生成 `results/resolution_comparison.csv`、`results/resolution_per_class.csv`、`results/resolution_validation_selected_experiment.json` 和 [分辨率比较](reports/resolution_ablation.md)。原 E0–E3 比较表与选模记录保留。该实验固定训练轮数和 batch，增加了每步像素计算量，不能称为等算力实验；当前测试集已查看过，不将新增结果视为未见盲测。执行记录见 [E4 运行说明](reports/resolution_run.md)。

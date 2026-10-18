@@ -23,3 +23,9 @@ scripts/run_experiments.py 持有系统文件锁，依次运行 E1→E2→E3；�
 北京时间 2026-10-15 09:40 启动后台顺序队列，PID=24284；E1 子进程 PID=50488。训练源码提交 `9bbabf5511cdb31487c559206db3d741c0c3ed33` 已推送至 GitHub main。E1 的来源与初始化日志确认使用固定 ImageNet MiT-B0 编码器及新建 11 类分割头，未启用续训。
 
 E1 首轮训练与验证于 09:41:30 完成：train CE=1.199229，val CE=0.806523，val mIoU=34.35%，耗时 47.29 秒，峰值 allocated VRAM=820.70 MiB。best_model 与 last_checkpoint 已保存，stderr 为空。这是第 1/50 轮的启动检查，不代表最终成绩。队列将在 E1 完整训练、测试和归档后自动启动 E2，再启动 E3；本记录不会随每轮变化，实时轮数以状态文件为准。
+
+## 完成与后续记录
+
+2026-10-15 北京时间 12:05，队列完成 E1、E2、E3 各 50 轮及最终评价。E1 Test mIoU=60.25%，E2=60.73%，E3=61.42%；验证集同样选择 E3，最佳轮次 48，Val mIoU=71.00%。全部组的原始混淆矩阵、50 行历史、权重 SHA256 和一次测试记录已核验，stderr 为空。最终比较见 ablation.md 和 results/comparison_per_class.csv。
+
+E3 相对 E0 的 Test IoU：Bicyclist +10.67、Pole +4.51、Pedestrian +3.72 个百分点，Fence -3.55 个百分点。E3 验证集 Pole 仍只有 12.92%，需要验证细节损失这一可能因素；Fence 的验证 IoU 较 E0 提升 2.00 个百分点，不能仅依据测试下降调整该类损失。2026-10-18 用户授权继续，先开展独立 E4 分辨率实验，方案及记录见 resolution_run.md。

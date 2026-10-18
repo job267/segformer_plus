@@ -1,6 +1,6 @@
 # 基础构建验收清单
 
-E0 及基线分析已完成；当前进入 E1–E3 消融。基础验收见 `reports/stage0_stage1_status.md`，运行记录见 `reports/training_run.md` 和 `reports/optimization_run.md`。
+E0–E3 消融已完成；当前推进 E4 分辨率扩展。基础验收见 `reports/stage0_stage1_status.md`，运行记录见 `reports/optimization_run.md` 和 `reports/resolution_run.md`。
 
 - [x] 已阅读原方案并冻结基本实现范围。
 - [x] README、固定依赖、Git ignore、E0–E3 YAML 与配置加载器。
@@ -17,7 +17,9 @@ E0 及基线分析已完成；当前进入 E1–E3 消融。基础验收见 `rep
 - [x] E0 完成 50 轮；第 34 轮验证选模；test mIoU=59.25%，best/last、曲线与指标已归档。
 - [x] 基线类别与混淆分析，见 reports/baseline_analysis.md。
 - [x] E1–E3 顺序执行、失败停止、恢复和实测比较入口；31 项测试与增强/Dice 真实批次检查通过。
-- [ ] E1–E3 正式消融、每类分析、曲线和真实比较表。
+- [x] E1–E3 各完成 50 轮，曲线、每类指标与比较表归档；验证选出 E3，Test mIoU=61.42%。
+- [x] E4 独立入口、共同评价网格与自动比较；40 项测试、真实训练批次和全部评价标签一致性检查通过。
+- [ ] E4 正式 50 轮与相对 E3 的真实分辨率比较。
 - [ ] 本地图片演示和 FP32／FP16 基准。
 - [ ] 课程报告与最终复现归档。
 

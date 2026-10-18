@@ -1,0 +1,6 @@
+{
+  "selected_by": "best_val_miou",
+  "experiment_id": "E3_combined",
+  "best_val_miou": 0.710013103539014,
+  "checkpoint": "D:\\code\\graph-NEU\\results\\E3_combined\\best_model"
+}
