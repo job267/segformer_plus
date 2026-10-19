@@ -1,0 +1,68 @@
+{
+  "pid": 31020,
+  "started_utc": "2026-10-18T15:44:27.868335+00:00",
+  "order": [
+    "E4_seed2024",
+    "E5_seed2024",
+    "E4_seed3407",
+    "E5_seed3407"
+  ],
+  "status": "completed",
+  "updated_utc": "2026-10-18T19:20:37.331668+00:00",
+  "current_experiment": null,
+  "completed": [
+    "E4_seed2024",
+    "E5_seed2024",
+    "E4_seed3407",
+    "E5_seed3407"
+  ],
+  "comparison": {
+    "completed_runs": 6,
+    "planned_runs": 6,
+    "families": [
+      {
+        "family": "E4",
+        "paired_n": 3,
+        "planned_n": 3,
+        "val_miou_mean": 0.7246778053701851,
+        "val_miou_std": 0.004693031982711149,
+        "test_miou_mean": 0.638838732519134,
+        "test_miou_std": 0.007889449119512696,
+        "test_pixel_accuracy_mean": 0.9082880131523628,
+        "test_pixel_accuracy_std": 0.0009758896158145339
+      },
+      {
+        "family": "E5",
+        "paired_n": 3,
+        "planned_n": 3,
+        "val_miou_mean": 0.726984510200574,
+        "val_miou_std": 0.004010364534956569,
+        "test_miou_mean": 0.643919377242535,
+        "test_miou_std": 0.00547228770039969,
+        "test_pixel_accuracy_mean": 0.9049437456017854,
+        "test_pixel_accuracy_std": 0.0032363065218162985
+      }
+    ],
+    "paired_differences": [
+      {
+        "seed": 42,
+        "paired_completed": true,
+        "val_delta_pp": 0.18423660719028012,
+        "test_delta_pp": 0.6293182586076917
+      },
+      {
+        "seed": 2024,
+        "paired_completed": true,
+        "val_delta_pp": -0.3029192005652215,
+        "test_delta_pp": -0.5642208948264615
+      },
+      {
+        "seed": 3407,
+        "paired_completed": true,
+        "val_delta_pp": 0.8106940424915998,
+        "test_delta_pp": 1.4590960532390618
+      }
+    ],
+    "selected_family": "E5"
+  }
+}

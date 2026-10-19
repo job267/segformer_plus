@@ -1,0 +1,47 @@
+{
+  "selected_by": "mean_best_val_miou_over_fixed_seeds",
+  "family": "E5",
+  "seeds": [
+    42,
+    2024,
+    3407
+  ],
+  "representative_seed": 42,
+  "checkpoint": "D:\\code\\graph-NEU\\results\\E5_weighted\\best_model",
+  "family_summary": [
+    {
+      "family": "E4",
+      "paired_n": 3,
+      "planned_n": 3,
+      "val_miou_mean": 0.7246778053701851,
+      "val_miou_std": 0.004693031982711149,
+      "test_miou_mean": 0.638838732519134,
+      "test_miou_std": 0.007889449119512696,
+      "test_pixel_accuracy_mean": 0.9082880131523628,
+      "test_pixel_accuracy_std": 0.0009758896158145339
+    },
+    {
+      "family": "E5",
+      "paired_n": 3,
+      "planned_n": 3,
+      "val_miou_mean": 0.726984510200574,
+      "val_miou_std": 0.004010364534956569,
+      "test_miou_mean": 0.643919377242535,
+      "test_miou_std": 0.00547228770039969,
+      "test_pixel_accuracy_mean": 0.9049437456017854,
+      "test_pixel_accuracy_std": 0.0032363065218162985
+    }
+  ],
+  "paired_delta_statistics_pp": {
+    "val_delta_pp": {
+      "n": 3,
+      "mean": 0.23067048303888615,
+      "std": 0.5582568337222802
+    },
+    "test_delta_pp": {
+      "n": 3,
+      "mean": 0.5080644723400973,
+      "std": 1.0170937658817236
+    }
+  }
+}

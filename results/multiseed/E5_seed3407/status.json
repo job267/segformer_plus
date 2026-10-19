@@ -1,0 +1,9 @@
+{
+  "status": "completed",
+  "updated_utc": "2026-10-18T19:20:35.954263+00:00",
+  "epoch": 50,
+  "epochs": 50,
+  "best_val_epoch": 46,
+  "best_val_miou": 0.7276623261784274,
+  "test_miou": 0.6443386068343465
+}
