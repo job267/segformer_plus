@@ -1,4 +1,4 @@
-"""SegFormer-B0 / CamVid course project, Stage 0-1 foundation."""
+"""SegFormer-B0 / CamVid semantic segmentation."""
 
 import os
 from pathlib import Path

@@ -96,7 +96,7 @@ def write_prediction(model, image_path, config, device, precision, directory):
     colored.save(directory / "segmentation.png")
     Image.blend(image, colored, alpha=0.5).save(directory / "overlay.png")
     return {
-        "input": str(Path(image_path).resolve()), "input_sha256": file_sha256(image_path),
+        "input": Path(image_path).name, "input_sha256": file_sha256(image_path),
         "original_size": [image.height, image.width], "directory": directory.name,
         "present_classes": [CLASS_NAMES[index] for index in np.unique(labels)],
     }

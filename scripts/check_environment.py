@@ -9,6 +9,7 @@ import platform
 import subprocess
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 from _bootstrap import ROOT
 
@@ -19,7 +20,7 @@ def main():
     args = parser.parse_args()
     report = {
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "python": sys.version, "python_executable": sys.executable,
+        "python": platform.python_version(), "python_executable": Path(sys.executable).name,
         "platform": platform.platform(), "packages": {}, "errors": [],
     }
     for distribution, module in (
@@ -31,7 +32,7 @@ def main():
             report["packages"][distribution] = importlib.metadata.version(distribution)
             importlib.import_module(module)
         except Exception as error:
-            report["errors"].append(f"{distribution}: {type(error).__name__}: {error}")
+            report["errors"].append(f"{distribution}: {type(error).__name__}")
     try:
         import torch
         from transformers import SegformerForSemanticSegmentation
@@ -51,9 +52,9 @@ def main():
             tensor = torch.ones((16, 16), device="cuda")
             report["cuda"]["compute_probe_sum"] = float((tensor @ tensor).sum().item())
         report["segformer_forward_signature"] = str(inspect.signature(SegformerForSemanticSegmentation.forward))
-        report["segformer_implementation"] = inspect.getfile(SegformerForSemanticSegmentation)
+        report["segformer_implementation"] = SegformerForSemanticSegmentation.__module__
     except Exception as error:
-        report["errors"].append(f"Model/CUDA probe: {type(error).__name__}: {error}")
+        report["errors"].append(f"Model/CUDA probe: {type(error).__name__}")
     try:
         completed = subprocess.run(
             ["nvidia-smi", "--query-gpu=name,driver_version,memory.total", "--format=csv,noheader"],
@@ -61,7 +62,7 @@ def main():
         )
         report["nvidia_smi"] = completed.stdout.strip()
     except (OSError, subprocess.SubprocessError) as error:
-        report["nvidia_smi"] = {"unavailable": str(error)}
+        report["nvidia_smi"] = {"unavailable": type(error).__name__}
     try:
         from src.config import load_config
         report["configurations"] = {
@@ -69,7 +70,7 @@ def main():
             for name in ("baseline.yaml", "augmentation.yaml", "dice_loss.yaml", "combined.yaml")
         }
     except Exception as error:
-        report["errors"].append(f"Configuration: {type(error).__name__}: {error}")
+        report["errors"].append(f"Configuration: {type(error).__name__}")
     report["status"] = "passed" if not report["errors"] else "failed"
     output = ROOT / args.output
     output.parent.mkdir(parents=True, exist_ok=True)

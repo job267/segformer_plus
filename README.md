@@ -1,208 +1,72 @@
-# SegFormer-B0 / CamVid 课程设计
+# SegFormer Plus 街景语义分割
 
-**综合报告 Word 版：**[课程设计与实验综合报告](reports/SegFormer_B0_课程设计与实验综合报告.docx)。已将课程报告与各阶段实验分析合并去重，包含完整消融、多种子逐类统计、失败案例、效率评测和复现验收；20 页，目录、表格与公式可编辑。原 Markdown 报告保留为来源记录，Word 为本次综合交付，未改写此前已验收 ZIP 的文件身份。
+基于 SegFormer-B0 的 CamVid 街景语义分割项目，围绕道路、车辆、行人和细小目标的像素级识别，探索数据增强、损失组合、训练分辨率与类别加权的实际收益，并提供图片分割交互演示。
 
-依据根目录的项目方案，E0–E5 训练、消融及 E4/E5 三种子复核均已完成。按平均最佳 Val mIoU 选择 E5：三种子 Val=72.70%±0.40 pp，Test=64.39%±0.55 pp；E4 分别为 72.47%±0.47 pp、63.88%±0.79 pp，详见 [多种子结果](reports/multiseed.md)。部署代表按预先协议使用 E5 原 seed=42 最佳模型，其单次 Test mIoU=64.92%。课程报告、图片上传演示、FP32/FP16 基准和最终复现交付已完成。报告见 [final_report.md](reports/final_report.md)，简表见 [results_summary.md](reports/results_summary.md)。
+当前 E5 代表模型的 **Val mIoU 为 73.06%，Test mIoU 为 64.92%**；相对基线提升 **5.67 个百分点**。E5 在三个固定随机种子下的 Test mIoU 为 **64.39% ± 0.55 个百分点**。
 
-**当前验证：77 项测试通过；独立解压目录核验十次训练归档并通过 CPU 离线预测，无完整数据集或预训练缓存；无历史结果的源码目录也通过全部测试。原训练源码、配置和依赖字节哈希保持冻结。**
+## 项目创新与特色
 
-## 1. 环境与安装
+项目的改进集中在 SegFormer-B0 的任务适配、训练策略组合与类别监督，基础架构及增强、Dice、类别加权方法沿用已有研究。
 
-已核验本机 Python 3.12.3、PyTorch 2.3.1、CUDA 构建版本 11.8、Transformers 4.44.1，RTX 4060 Laptop GPU 约 8GB；驱动 576.02。详细记录位于 `environment.json`。当前 Python 位于 `D:/anaconda/777/python.exe`，已有依赖，可直接运行以下命令。
+- **增强与区域重叠监督结合**：同步变换图像与标签，结合轻量颜色增强及 CE + 0.5 Dice，在单独对照的基础上形成组合方案。E3 的 Test mIoU 达到 61.42%，较基线提升 2.17 个百分点。
+- **提高训练分辨率，保留更多空间细节**：输入与训练标签由 384×384 提升至 512×512，在相同评价网格下比较。E4 较 E3 的 Test mIoU 提升 2.87 个百分点。
+- **按类别频率调整监督强度**：根据训练标签的像素频率生成类别权重，在 CE 中加强低频类别的监督，保留原有 Dice 项。E5 的杆状物、标志牌和骑行者 IoU 均高于 E4，整体 Test mIoU 再提升 0.63 个百分点。
+- **结合多种子结果判断改进幅度**：对 E4、E5 使用三个固定种子进行配对比较。E5 的平均 Test mIoU 较 E4 提升 0.51 个百分点，两组种子提高、一组降低，反映了改进收益及其波动。
 
-新环境建议使用 Python 3.12，在项目根目录执行：
+## 基线方案
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install torch==2.3.1 --index-url https://download.pytorch.org/whl/cu118
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-```
-
-CPU 环境把 PyTorch 安装来源改为 `https://download.pytorch.org/whl/cpu`。这里固定已验证的版本，安装命令参考 [PyTorch 官方历史版本说明](https://pytorch.org/get-started/previous-versions/)。后续命令里的 `python` 可以替换成 `.\.venv\Scripts\python.exe`。
-
-## 2. 按顺序完成基础验收
-
-```powershell
-# 环境与四组 YAML 配置检查
-python scripts/check_environment.py
-
-# 从同一固定版本下载划分、图像和 11 类标签，可重复运行续传
-python scripts/download_camvid.py --workers 4
-
-# 核验全部文件，输出标签统计、划分隔离检查和训练样本叠加图
-python scripts/audit_dataset.py
-
-# 载入指定预训练编码器，保存 missing/unexpected keys
-python scripts/check_model.py
-
-# 核心逻辑测试，不下载外部数据或权重
-python -m pytest -q --basetemp=.cache/pytest
-
-# 真实训练集的一批数据：前向、CE、反向、AdamW 更新
-python scripts/smoke_test.py --offline --batch-size 4
-
-# 20 张固定训练样本的学习诊断，单独归档，不作为正式实验
-python scripts/check_overfit.py --offline --samples 20 --epochs 20
-```
-
-任何命令失败都会返回非零退出码；数据审计、模型载入、冒烟和过拟合脚本会保留诊断 JSON。先排查错误，再进入 E0。首次下载权重需要联网；后续 `--offline` 仅访问本项目缓存。也可先手动按 [数据说明](data/README.md) 放置完整数据，跳过下载命令。
-
-只有需要验证 CPU 或暂时没有真实数据时，运行显式的合成检查：
-
-```powershell
-python scripts/smoke_test.py --synthetic --offline --device cpu --size 64 --output-dir results/stage1/cpu_logic_smoke
-# 无权重时显式测试同一 B0 架构；日志标记随机初始化
-python scripts/smoke_test.py --synthetic --random-init --device cpu --size 64 --output-dir results/stage1/random_logic_smoke
-```
-
-合成检查不能替代真实数据验收。真实数据检查不接受 `--random-init`。默认数据缺失时会报错，不会自动生成数据或替换模型。
-
-## 3. 项目结构
-
-```text
-configs/        E0–E3 配置，后三组继承 baseline.yaml
-src/            配置、标签、Dataset、成对变换、模型、损失、指标、epoch 函数
-scripts/        环境自检、下载、审计、模型载入、冒烟、小样本学习检查
-tests/          标签、划分隔离、增强同步、ignore、Dice、指标与配置测试
-docs/           冻结的实验协议
-data/           获取与许可说明；实际数据被 Git 忽略
-results/        检查日志、配置快照和可视化；后续正式实验独立归档
-reports/        当前阶段验收记录
-environment.json  真实环境记录
-```
-
-## 4. 模型、数据和配置约定
-
-- 主模型采用 [Transformers 4.44.1 的 SegFormer 实现](https://huggingface.co/docs/transformers/v4.44.1/model_doc/segformer)。载入 [nvidia/mit-b0](https://huggingface.co/nvidia/mit-b0) 的 ImageNet 编码器，然后严格复制编码器权重，并新建 11 类解码头。分类层的两项多余权重可以解释，其他缺失或多余键会直接报错。权重版本固定为 `80983a413c30d36a39c20203974ae7807835e2b4`。
-- 数据来自 [lih627/CamVid](https://github.com/lih627/CamVid)，版本固定为 `79ae0071a75d90331a62b5a2aaf6d53cc69fd9f6`；使用该来源的三个清单及 `CamVidGray` 标签，不混入其他划分。367/101/233 是参考数量，验收以审计后的文件为准。
-- 配置中路径相对于项目根目录解析；YAML 的 `extends` 相对于当前配置文件解析。E0–E3 配置和实现已冻结；扩展实验使用独立配置覆盖，不修改 `baseline.yaml`。
-- 标签 0 为 Sky，有效类为 0–10，255 为 ignore。默认显式选择 `index` 编码；RGB 11 类标签可设 `rgb`，未知颜色会报错。不会自动把原始 32 类 RGB 标签当成 11 类数据。
-- 使用自有成对变换实现 384×384 拉伸缩放和 ImageNet Normalize；图像用双线性、标签用最近邻。验证、测试不采用随机增强。标签 ID 从不平移。
-- 模型缓存位于 `.cache/huggingface/`，数据和大型权重不会纳入 Git。Windows 缺少符号链接权限时缓存会使用普通文件，无需管理员权限。
-
-详细指标定义、消融公平性、随机性限制和下一阶段门槛见 [实验协议](docs/experiment_protocol.md)。
-
-## 5. 检查产物
-
-| 文件/目录 | 用途 |
+| 项目 | 基线设置 |
 |---|---|
-| `environment.json` | 依赖、Python、GPU、驱动、CUDA 实际信息 |
-| `data/CamVid/source_metadata.json` | 数据来源版本、下载状态和清单摘要 |
-| `results/stage1/data_audit.json` | 实际配对、标签、像素统计、文件哈希和错误 |
-| `results/stage1/previews/` | 原图、索引标签、彩色标签、叠加图 |
-| `results/stage1/model_loading.json` | 编码器载入情况及新建分割头参数 |
-| `results/stage1/real_smoke/` | 真实批次前向/反向/更新、配置和日志 |
-| `results/stage1/cpu_logic_smoke/` | 单独标记的 CPU 合成逻辑检查 |
-| `results/stage1/overfit/` | 训练子集 ID、可重载的实际配置、原配置副本、逐轮日志和随机样本叠加图 |
+| 基础模型 | SegFormer-B0，分层 Transformer 编码器与轻量 MLP 解码器 |
+| 模型初始化 | ImageNet 预训练 MiT-B0 编码器，新建 11 类分割头 |
+| 数据集 | CamVid，11 类街景语义分割 |
+| 数据划分 | 训练集 367 张，验证集 101 张，测试集 233 张 |
+| 输入分辨率 | 384×384 |
+| 损失函数 | 交叉熵 CE |
+| 数据增强 | 基线关闭随机增强 |
+| 训练设置 | AdamW，50 轮，batch size 为 4 |
 
-## 6. 正式 E0 训练与断点恢复
+各组独立初始化，按最高验证集 mIoU 选择最佳轮次。所有分割指标均在共同的 384×384 标签网格上计算，覆盖 11 个有效类别。
 
-```powershell
-python scripts/train.py --config configs/baseline.yaml --offline
-# 进程中断后，使用完全相同的配置与代码从上一个完整 epoch 恢复
-python scripts/train.py --config configs/baseline.yaml --offline --resume
-```
+## 当前跑分
 
-默认使用 384×384、batch=4、CE、AdamW、学习率 6e-5、50 epoch 和 CUDA AMP，独立从固定的 MiT-B0 编码器开始。启动前重新核对审计清单、全部数据文件哈希和 Stage 1 验收。模型不会从小样本诊断权重接续训练。
+### 单种子实验
 
-训练目录为 `results/E0_baseline/`。`status.json` 显示当前状态和完成轮数；`train_log.csv` 逐轮记录 train/val loss、val mIoU、学习率、耗时和峰值 allocated VRAM。`best_model/` 是按 val mIoU 选择的 Hugging Face 权重；`last_checkpoint/state.pt` 保存最新完整轮次的模型、优化器、AMP scaler、随机状态、数据加载器状态与历史，支持断点恢复。运行时记录配置、真实环境、代码 SHA256 和 Git 提交号；续训会拒绝配置或代码发生变化的运行，已有实验不会被静默覆盖。
+以下结果使用固定种子 42。像素准确率对应测试集，变化量以基线 E0 的 Test mIoU 为参照。
 
-50 轮结束后，自动用最佳验证权重进行一次完整 test 评价，保存 `metrics.json`、每类 IoU、混淆矩阵 CSV/PNG、训练曲线，以及六个预先确定位置的测试样本可视化。测试只用于最终评价。若归档中断，已完成的同一权重测试结果会复用，不重新选择模型。
+| 方案 | 主要设置 | 训练分辨率 | Val mIoU | Test mIoU | 像素准确率 | 较基线提升 |
+|---|---|---|---:|---:|---:|---:|
+| E0 基线 | CE，无随机增强 | 384×384 | 67.76% | 59.25% | 89.77% | — |
+| E1 数据增强 | CE，成对增强 | 384×384 | 68.92% | 60.25% | 89.78% | +1.00 pp |
+| E2 损失组合 | CE + 0.5 Dice，无随机增强 | 384×384 | 69.34% | 60.73% | 89.69% | +1.48 pp |
+| E3 组合方案 | 成对增强，CE + 0.5 Dice | 384×384 | 71.00% | 61.42% | 90.03% | +2.17 pp |
+| E4 分辨率提升 | E3 策略，提高训练分辨率 | 512×512 | 72.88% | 64.29% | 90.94% | +5.04 pp |
+| **E5 类别加权** | **E4 策略，使用加权 CE** | **512×512** | **73.06%** | **64.92%** | **90.71%** | **+5.67 pp** |
 
-实际启动与进度记录见 `reports/training_run.md`。单组入口不会自动启动其他实验；FP32/FP16 效率测试仍在后续阶段。
+pp 表示百分点。提高分辨率增加了每步计算量，表中比较采用相同训练轮数与 batch size。
 
-## 7. E1–E3 顺序训练与比较
+### 三种子表现
 
-```powershell
-# 验证 E0 归档和冻结配置，依次训练 E1、E2、E3
-python scripts/run_experiments.py --offline
-# 中断后跳过已完整归档的组，恢复未完成的组
-python scripts/run_experiments.py --offline --resume
-# 四组全部完成后重新核验并生成比较；查看中途记录加 --allow-incomplete
-python scripts/compare_experiments.py
-```
+种子为 42、2024、3407；下表为均值与样本标准差。
 
-E1 仅加水平翻转和轻量颜色增强；E2 仅改为 CE+0.5 Dice；E3 同时启用两项。各组独立从固定预训练编码器、相同 seed=42 和新建分割头开始，均为 50 轮，其余预算、数据、预处理和优化器与 E0 相同。运行前校验 E0 原有训练源码哈希；队列运行期间冻结源码、配置和依赖文件。出现失败时停止后续实验，保留诊断与恢复入口。
+| 方案 | Val mIoU | Test mIoU |
+|---|---:|---:|
+| E4 分辨率提升 | 72.47% ± 0.47 pp | 63.88% ± 0.79 pp |
+| **E5 类别加权** | **72.70% ± 0.40 pp** | **64.39% ± 0.55 pp** |
 
-队列进度位于 `results/ablation_queue/status.json`；各组 `status.json` 与 `train_log.csv` 保存实际轮数。每完成一组便更新 `results/comparison.csv`、`results/comparison_per_class.csv` 和 [消融记录](reports/ablation.md)，未完成组留空。最终依据最高 Val mIoU 选择方案并保存 `results/validation_selected_experiment.json`，Test 仅用于最终评价。增强或 Dice 的收益以实际结果为准。权重、原图预测和运行日志保留在本地，不纳入 Git。
+最终方案按三个种子的平均最佳 Val mIoU 选择为 **E5**，展示用代表模型固定使用该方案的 seed=42 权重。单种子的 64.92% 与三种子均值 64.39% 是不同统计量；三种子结果仅描述当前实验中的波动。后续扩展是在已查看历史测试结果后开展，相关成绩不作为未见测试集的盲测结论。
 
-## 8. E4 分辨率扩展实验
+### 代表模型的部分逐类结果
 
-```powershell
-# 独立诊断目录：真实 512×512、batch=4 的一次参数更新
-python scripts/smoke_test.py --config configs/resolution.yaml --offline --batch-size 4 --output-dir results/stage5/E4_smoke
-# 核对全部 val/test 标签与 E3 完全一致，并检查真实 FP32 验证批次
-python scripts/check_resolution.py --offline
-# 正式 E4：独立预训练初始化，50 轮；中断后加 --resume
-python scripts/train_resolution.py --offline
-# 全部结束后重建独立比较表；中途查看加 --allow-incomplete
-python scripts/compare_resolution.py
-```
+以下为同一固定种子下，E0 与 E5 的测试集 IoU。
 
-E4 沿用 E3 的数据、增强、CE+0.5 Dice、seed=42、batch=4、50 轮和 AdamW 设置；输入及训练标签为 512×512。验证、测试标签直接从原始标注最近邻缩放至 384×384，模型 logits 双线性插值到这一共同网格后计算 loss 与指标。以相同网格的最高验证 mIoU 选模，最终测试一次，不从 E3 微调权重接续。训练引擎与 E0–E3 原有源文件保持一致，仅增加独立数据适配器和执行入口。
+| 类别 | E0 基线 | E5 类别加权 |
+|---|---:|---:|
+| 杆状物 Pole | 15.91% | 26.29% |
+| 标志牌 SignSymbol | 36.64% | 45.56% |
+| 行人 Pedestrian | 39.20% | 51.12% |
+| 骑行者 Bicyclist | 37.84% | 54.70% |
 
-进度位于 `results/E4_resolution/status.json`；完成后自动生成 `results/resolution_comparison.csv`、`results/resolution_per_class.csv`、`results/resolution_validation_selected_experiment.json` 和 [分辨率比较](reports/resolution_ablation.md)。原 E0–E3 比较表与选模记录保留。该实验固定训练轮数和 batch，增加了每步像素计算量，不能称为等算力实验；当前测试集已查看过，不将新增结果视为未见盲测。执行记录见 [E4 运行说明](reports/resolution_run.md)。
+## 应用展示
 
-## 9. E5 类别加权实验
-
-```powershell
-# 训练 mask 统计、权重归档、真实 512×512 参数更新和验证批次检查
-python scripts/check_weighted.py --offline
-# 正式独立训练 50 轮；中断后加 --resume
-python scripts/train_weighted.py --offline
-# 完成后重建 E4/E5 比较；中途查看加 --allow-incomplete
-python scripts/compare_weighted.py
-```
-
-E5 继承 E4，仅给 CE 增加类别权重，Dice 系数仍为 0.5。权重仅用 367 张未增强训练 mask 在 512×512 网格上的有效像素计算：`raw_c = 1/sqrt(frequency_c)`，再除以 raw 的类别均值，截断至 `[0.5,3.0]`；不使用 val/test 频率。权重、样本 ID、计数和哈希位于 `results/stage6/class_weights.json`。加权 CE 以有效像素权重之和归一化；逐轮 loss 沿用原批次有效像素加权记录方式，不直接与 E4 loss 比较。
-
-输入/训练标签 512×512，验证/测试标签 384×384，独立预训练初始化、增强、seed=42、batch=4、50 轮及优化器不变。原 E0–E4 源码保持冻结；E5 使用单独的训练适配器，复用原 epoch、评价与 checkpoint 工具，不修改原训练全局函数。除完整训练状态外，checkpoint 同时保存类别权重，恢复时核对配置、代码、数据、权重与 E4 对照身份。
-
-进度为 `results/E5_weighted/status.json`。完成后自动生成 `results/weighted_comparison.csv`、`weighted_per_class.csv`、`weighted_validation_per_class.csv`、`weighted_validation_selected_experiment.json` 和 [类别加权报告](reports/weighted_ablation.md)。按最高验证 mIoU 选择 E4/E5，同分保留 E4；不预设加权有效。完整协议见 [E5 协议](docs/weighted_protocol.md)。
-
-## 10. 图片推理与效率评测
-
-```powershell
-# --input 支持单张图片或图片目录；使用空输出目录保留历史结果
-python scripts/predict.py --input data/CamVid/CamVid_RGB/0016E5_07959.png --output-dir results/inference_demo_new
-# 在 CUDA 上使用 FP16 autocast；模型权重仍为 FP32
-python scripts/predict.py --input path/to/image.jpg --precision fp16 --output-dir results/inference_fp16
-# 默认已验证的 E4；可用 --run-dir 指定其他已完成且归档一致的实验
-python scripts/benchmark_inference.py --output-dir results/benchmark_E4_new
-```
-
-推理输出原图分辨率的 `index.png`（0–10 类 ID）、`segmentation.png`、`overlay.png`、原图及可本地打开的 HTML 图例预览。只加载本地完整归档且权重哈希相符的最佳模型，无额外下载；FP16 需要 CUDA。样例见本地 `results/inference_demo/index.html`，由验证图像生成，不代表整套数据的精度。
-
-完整 101 张验证样本的 FP32/FP16 评价及 batch=1 性能见 [推理评测](reports/inference_benchmark.md)。本机此次模型均时 FP32=21.14 ms、FP16 autocast=25.25 ms；后者 allocated 峰值更低，但未获得加速，默认保留 FP32。模型测速不含读图与传输；另外单独记录含预处理、传输、原尺寸输出及叠加着色的图片流程耗时，二者不能混称端到端 FPS。评测在 E5 启动前完成，未重新评价测试集。
-
-## 11. E4/E5 三种子配对复核
-
-```powershell
-# 核验原归档、数据和两组在新种子下完全相同的实际预训练初始化
-python scripts/check_multiseed.py --offline
-# 顺序执行四次新增训练；中断后加 --resume，已完成的归档会核验后跳过
-python scripts/run_multiseed.py --offline
-# 完成后重建均值、样本标准差和配对差值；中途查看加 --allow-incomplete
-python scripts/compare_multiseed.py
-```
-
-固定种子为 `[42,2024,3407]`。seed=42 使用已有 E4/E5 归档，不重复训练或测试。新增顺序为 E4_seed2024 → E5_seed2024 → E4_seed3407 → E5_seed3407，各 50 轮；两组继续复用原训练引擎，除种子、实验 ID 和独立输出目录外不改变配置。E5 使用原训练频率权重，不按种子重新调权重；每次从固定预训练编码器和新建头独立开始。正式训练前、每个新种子下 E4/E5 全部初始参数与 buffers 的 SHA256 必须一致，原数据与所有已有源文件也须一致。
-
-队列状态位于 `results/multiseed/queue/status.json`，各训练位于 `results/multiseed/E4_seed2024/` 等目录。每完成一组便更新 `runs.csv`、`summary.csv`、`paired_differences.csv`、`per_class_summary.csv` 和 [多种子报告](reports/multiseed.md)。汇总仅使用 E4/E5 都完整完成的相同种子，标准差为 ddof=1，只有一对时留空。全部三对结束后，按平均最佳 Val mIoU 选择方案，同分保留 E4；部署代表固定使用胜出方案已有 seed=42 模型，不按 Test 挑种子或集成。最终选择保存 `results/multiseed/selection.json`。三种子为描述性复核，不证明统计显著性或场景泛化。协议见 [多种子协议](docs/multiseed_protocol.md)。
-
-## 12. 最终课程交付与本地演示
-
-- [课程报告 Markdown](reports/final_report.md) 与 [离线 HTML 阅读版](reports/final_report.html)：方法、全部对照、逐类结果、曲线、混淆矩阵、失败图像、多种子统计及局限。
-- [复现指南](docs/reproduction.md)：离线核验、纯净训练目录、固定数据/初始化模型来源、完整顺序和恢复边界。
-- [第三方来源与许可](THIRD_PARTY_NOTICES.md)：预训练许可全文、CamVid 来源、依赖归属。
-- 本地 `delivery/artifacts/segformer_plus_delivery_20261019.zip`：含 10 次最佳模型、数值结果、报告和必要示例；ZIP SHA256 与验证记录见 `delivery/release.json`。
-
-```powershell
-# 本地已有权重，或完整解压提交包后运行
-python demo/app.py --device auto --port 8765
-# 浏览器打开 http://127.0.0.1:8765
-# 在解压的新目录核验所有清单文件、归档及单张 CPU 离线预测
-python delivery/verify.py --output ../bundle_verification.json
-```
-
-页面支持图片上传、验证示例、E0/E4/E5 选择、精度选择、原尺寸叠加图与 PNG 下载，默认最终 E5 / FP32。页面的单图延迟与同步预热后的正式基准口径不同。Git 不包含最佳权重和照片示例；报告照片插图与演示示例在本地完整提交包中。新目录核验使用本机固定依赖环境，不代表已在另一台机器完成全部训练。若要从零训练，先用 `python delivery/package.py --training-workspace ../segformer_retrain` 创建无 results 的新目录，再按复现指南执行，避免覆盖原始实验。
+交互页面支持图片上传、E0/E4/E5 模型切换、类别图例、原图与分割结果对照，以及彩色分割图和叠加图下载。输出保持输入图像的原始尺寸，默认采用 E5 代表模型。

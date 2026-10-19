@@ -1,9 +1,0 @@
-{
-  "attempts": [
-    {
-      "started_utc": "2026-10-15T02:58:04.185103+00:00",
-      "checkpoint_sha256": "d5c7ad546f71c530acd584c33e86b3e08b4b1b22a83e1c5b297f805de332762f",
-      "completed_utc": "2026-10-15T02:58:16.876558+00:00"
-    }
-  ]
-}

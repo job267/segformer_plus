@@ -10,7 +10,6 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from time import perf_counter
-from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -36,6 +35,10 @@ def png_url(image):
     return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
 
 
+class UserInputError(ValueError):
+    """Only these deliberate validation messages may be returned to the browser."""
+
+
 class Predictor:
     def __init__(self, device):
         self.device = device
@@ -49,22 +52,22 @@ class Predictor:
     def predict(self, payload):
         name, precision = payload.get("model", "E5"), payload.get("precision", "fp32")
         if name not in RUNS or precision not in ("fp32", "fp16"):
-            raise ValueError("请选择页面中提供的模型和精度")
+            raise UserInputError("请选择页面中提供的模型和精度")
         if precision == "fp16" and self.device.type != "cuda":
-            raise ValueError("FP16 需要 CUDA，请选择 FP32")
+            raise UserInputError("FP16 需要 CUDA，请选择 FP32")
         try:
             raw = base64.b64decode(payload["image"], validate=True)
-        except (KeyError, ValueError, binascii.Error):
-            raise ValueError("图片上传内容无效") from None
+        except (KeyError, TypeError, ValueError, binascii.Error):
+            raise UserInputError("图片上传内容无效") from None
         if not raw or len(raw) > 16 * 1024**2:
-            raise ValueError("请选择小于 16 MiB 的图片")
+            raise UserInputError("请选择小于 16 MiB 的图片")
         try:
             with Image.open(io.BytesIO(raw)) as opened:
                 if opened.width * opened.height > 24_000_000:
-                    raise ValueError("图片尺寸过大，请先缩小到 2400 万像素以内")
+                    raise UserInputError("图片尺寸过大，请先缩小到 2400 万像素以内")
                 image = ImageOps.exif_transpose(opened).convert("RGB")
         except (UnidentifiedImageError, OSError):
-            raise ValueError("无法解码图片，请使用 PNG、JPEG 等常见格式") from None
+            raise UserInputError("无法解码图片，请使用 PNG、JPEG 等常见格式") from None
         with self.lock:
             started = perf_counter()
             if name not in self.cache:
@@ -104,20 +107,6 @@ def handler_for(predictor):
             self.wfile.write(body)
 
         def do_GET(self):
-            if self.path.startswith("/report/"):
-                relative = unquote(self.path.removeprefix("/report/"))
-                path = (ROOT / "reports" / relative).resolve()
-                allowed = relative == "final_report.html" or (relative.startswith("figures/") and path.suffix == ".png")
-                if not allowed or not path.is_relative_to((ROOT / "reports").resolve()) or not path.is_file():
-                    self.send_json(404, {"error": "报告文件不存在"})
-                    return
-                body = path.read_bytes()
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8" if path.suffix == ".html" else "image/png")
-                self.send_header("Content-Length", str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
-                return
             if self.path == "/":
                 body = (ROOT / "demo/index.html").read_bytes()
                 self.send_response(200)
@@ -149,16 +138,36 @@ def handler_for(predictor):
                 return
             try:
                 size = int(self.headers.get("Content-Length", "0"))
-                if not 0 < size <= MAX_BODY or self.headers.get_content_type() != "application/json":
-                    raise ValueError("上传内容需为 JSON，且小于 24 MiB")
+            except ValueError:
+                self.send_json(400, {"error": "上传内容长度无效"})
+                return
+            if not 0 < size <= MAX_BODY or self.headers.get_content_type() != "application/json":
+                self.send_json(400, {"error": "上传内容需为 JSON，且小于 24 MiB"})
+                return
+            try:
                 payload = json.loads(self.rfile.read(size))
-                if not isinstance(payload, dict):
-                    raise ValueError("上传内容格式不正确")
-                self.send_json(200, predictor.predict(payload))
-            except (ValueError, TypeError, json.JSONDecodeError) as error:
+            except (ValueError, UnicodeError):
+                self.send_json(400, {"error": "上传内容不是有效的 JSON"})
+                return
+            if not isinstance(payload, dict):
+                self.send_json(400, {"error": "上传内容格式不正确"})
+                return
+            try:
+                result = predictor.predict(payload)
+            except UserInputError as error:
                 self.send_json(400, {"error": str(error)})
-            except Exception as error:
-                self.send_json(500, {"error": f"预测失败：{type(error).__name__}：{error}"})
+                return
+            except Exception:
+                self.send_json(500, {"error": "分割失败，请确认所选模型可用后重试"})
+                return
+            self.send_json(200, result)
+
+        def log_message(self, format, *args):
+            # Request paths and client addresses are not written to shared logs.
+            pass
+
+        def version_string(self):
+            return "SegFormer"
 
     return Handler
 

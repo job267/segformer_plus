@@ -32,7 +32,7 @@ def main():
     seed_everything(42)
     model, config, metrics = load_run_model(args.run_dir, device)
     items = [write_prediction(model, path, config, device, args.precision,
-                              directory / "predictions" / f"{index:03d}_{path.stem}")
+                              directory / "predictions" / f"{index:03d}")
              for index, path in enumerate(paths)]
     metadata = {
         "experiment_id": config["experiment_id"], "checkpoint_sha256": metrics["checkpoint_sha256"],
