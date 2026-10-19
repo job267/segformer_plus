@@ -1,8 +1,8 @@
 # SegFormer-B0 / CamVid 课程设计
 
-依据根目录的项目方案，E0–E5 训练、消融及 E4/E5 三种子复核均已完成。按平均最佳 Val mIoU 选择 E5：三种子 Val=72.70%±0.40 pp，Test=64.39%±0.55 pp；E4 分别为 72.47%±0.47 pp、63.88%±0.79 pp，详见 [多种子结果](reports/multiseed.md)。部署代表按预先协议使用 E5 原 seed=42 最佳模型，其单次 Test mIoU=64.92%。图片推理和 FP32/FP16 评测已完成，剩余为课程报告与最终复现归档。
+依据根目录的项目方案，E0–E5 训练、消融及 E4/E5 三种子复核均已完成。按平均最佳 Val mIoU 选择 E5：三种子 Val=72.70%±0.40 pp，Test=64.39%±0.55 pp；E4 分别为 72.47%±0.47 pp、63.88%±0.79 pp，详见 [多种子结果](reports/multiseed.md)。部署代表按预先协议使用 E5 原 seed=42 最佳模型，其单次 Test mIoU=64.92%。课程报告、图片上传演示、FP32/FP16 基准和最终复现交付已完成。报告见 [final_report.md](reports/final_report.md)，简表见 [results_summary.md](reports/results_summary.md)。
 
-**当前验证：64 项测试通过，新增固定种子矩阵、配对统计、样本标准差、无提前选模及初始化哈希检查。E4/E5 原训练实现和已完成结果保持冻结。**
+**当前验证：77 项测试通过；独立解压目录核验十次训练归档并通过 CPU 离线预测，无完整数据集或预训练缓存；无历史结果的源码目录也通过全部测试。原训练源码、配置和依赖字节哈希保持冻结。**
 
 ## 1. 环境与安装
 
@@ -187,3 +187,20 @@ python scripts/compare_multiseed.py
 固定种子为 `[42,2024,3407]`。seed=42 使用已有 E4/E5 归档，不重复训练或测试。新增顺序为 E4_seed2024 → E5_seed2024 → E4_seed3407 → E5_seed3407，各 50 轮；两组继续复用原训练引擎，除种子、实验 ID 和独立输出目录外不改变配置。E5 使用原训练频率权重，不按种子重新调权重；每次从固定预训练编码器和新建头独立开始。正式训练前、每个新种子下 E4/E5 全部初始参数与 buffers 的 SHA256 必须一致，原数据与所有已有源文件也须一致。
 
 队列状态位于 `results/multiseed/queue/status.json`，各训练位于 `results/multiseed/E4_seed2024/` 等目录。每完成一组便更新 `runs.csv`、`summary.csv`、`paired_differences.csv`、`per_class_summary.csv` 和 [多种子报告](reports/multiseed.md)。汇总仅使用 E4/E5 都完整完成的相同种子，标准差为 ddof=1，只有一对时留空。全部三对结束后，按平均最佳 Val mIoU 选择方案，同分保留 E4；部署代表固定使用胜出方案已有 seed=42 模型，不按 Test 挑种子或集成。最终选择保存 `results/multiseed/selection.json`。三种子为描述性复核，不证明统计显著性或场景泛化。协议见 [多种子协议](docs/multiseed_protocol.md)。
+
+## 12. 最终课程交付与本地演示
+
+- [课程报告 Markdown](reports/final_report.md) 与 [离线 HTML 阅读版](reports/final_report.html)：方法、全部对照、逐类结果、曲线、混淆矩阵、失败图像、多种子统计及局限。
+- [复现指南](docs/reproduction.md)：离线核验、纯净训练目录、固定数据/初始化模型来源、完整顺序和恢复边界。
+- [第三方来源与许可](THIRD_PARTY_NOTICES.md)：预训练许可全文、CamVid 来源、依赖归属。
+- 本地 `delivery/artifacts/segformer_plus_delivery_20261019.zip`：含 10 次最佳模型、数值结果、报告和必要示例；ZIP SHA256 与验证记录见 `delivery/release.json`。
+
+```powershell
+# 本地已有权重，或完整解压提交包后运行
+python demo/app.py --device auto --port 8765
+# 浏览器打开 http://127.0.0.1:8765
+# 在解压的新目录核验所有清单文件、归档及单张 CPU 离线预测
+python delivery/verify.py --output ../bundle_verification.json
+```
+
+页面支持图片上传、验证示例、E0/E4/E5 选择、精度选择、原尺寸叠加图与 PNG 下载，默认最终 E5 / FP32。页面的单图延迟与同步预热后的正式基准口径不同。Git 不包含最佳权重和照片示例；报告照片插图与演示示例在本地完整提交包中。新目录核验使用本机固定依赖环境，不代表已在另一台机器完成全部训练。若要从零训练，先用 `python delivery/package.py --training-workspace ../segformer_retrain` 创建无 results 的新目录，再按复现指南执行，避免覆盖原始实验。

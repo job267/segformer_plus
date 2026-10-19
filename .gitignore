@@ -25,3 +25,8 @@ results/**/training.lock
 results/**/stdout.log
 results/**/stderr.log
 *.tmp
+
+# Local course delivery includes weights and a small attributed image sample.
+delivery/artifacts/
+demo/example.png
+reports/figures/qualitative/

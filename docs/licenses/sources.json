@@ -1,0 +1,11 @@
+{
+  "SegFormer_LICENSE.txt": {
+    "source": "https://raw.githubusercontent.com/NVlabs/SegFormer/master/LICENSE",
+    "sha256": "f549820c06519e3105e5174a2fd7285224ffd2268a7f879a843b1a255fd04a61",
+    "retrieved": "2026-10-19"
+  },
+  "CamVid_repository_LICENSE.txt": {
+    "source": "https://github.com/lih627/CamVid/blob/79ae0071a75d90331a62b5a2aaf6d53cc69fd9f6/LICENSE",
+    "sha256": "1ebf5d755df8986ac403145058d1d08bcaf08508e399f5bf81b2bb43dd03f183"
+  }
+}
